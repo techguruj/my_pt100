@@ -19,33 +19,19 @@ def setup_sensor():
     
     return instrument
 
-def read_temperatures(instrument, valid_channels=None):
+def read_temperatures(instrument):
     try:
-        if valid_channels is None:
-            valid_channels = set(range(4))  # All channels initially valid
-        
-        if not valid_channels:  # If no valid channels left
-            return None
-            
         values = instrument.read_registers(0, 4, functioncode=3)
         temperatures = []
-        new_valid_channels = valid_channels.copy()
         
         for i in range(4):
-            if i in valid_channels:
-                temp = values[i]/10.0
-                if temp > 1000:
-                    new_valid_channels.remove(i)
-                    temperatures.append(None)
-                else:
-                    temperatures.append(temp)
-            else:
-                temperatures.append(None)
+            temp = values[i]/10.0
+            temperatures.append(temp)
                 
-        return temperatures, new_valid_channels
+        return temperatures
     except Exception as e:
         print(f"Error reading temperatures: {e}")
-        return None, valid_channels
+        return None
 
 def main():
     try:
@@ -58,19 +44,15 @@ def main():
         print(f"预计结束时间: {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
         print("-" * 40)
         
-        valid_channels = set(range(4))  # Track valid channels
-        
         while datetime.now() < end_time:
-            result = read_temperatures(instrument, valid_channels)
-            if result is not None:
-                temps, valid_channels = result
+            temps = read_temperatures(instrument)
+            if temps is not None:
                 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 print(f"时间: {current_time}")
                 for i, temp in enumerate(temps):
-                    if temp is not None:
-                        print(f"Channel {i+1} Temperature: {temp}°C")
+                    print(f"Channel {i+1} Temperature: {temp}°C")
                 print("-" * 40)
-            time.sleep(10)
+            time.sleep(1)
             
         print("采集完成！")
             
